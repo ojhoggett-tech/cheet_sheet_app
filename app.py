@@ -116,7 +116,7 @@ COMMANDS = {
                 "name": "list comprehension",
                 "category": "Lists",
                 "what": "A compact way to build a new list by transforming or filtering another list.",
-                "code": 'nums = [1, 2, 3, 4, 5]\n\n# Square every number\nsquares = [n * n for n in nums]\n# [1, 4, 9, 16, 25]\n\n# Filter — only even numbers\nevens = [n for n in nums if n % 2 == 0]\n# [2, 4]\n\n# Real example from workout tracker:\n# Get all unique dates from sessions\ndates = sorted(set(s["date"] for s in user_sessions if "date" in s))',
+                "code": 'nums = [1, 2, 3, 4, 5]\n\n# Square every number\nsquares = [n * n for n in nums]\n# [1, 4, 9, 16, 25]\n\n# Filter — only even numbers\nevens = [n for n in nums if n % 2 == 0]\n# [2, 4]\n\n# Real example from student portal:\n# Get only posts matching a category\nposts = [p for p in all_posts if p["category"] == selected_category]',
                 "gotcha": None,
                 "tip": "Readable for simple cases. If the logic gets complex, use a regular for loop instead.",
             },
@@ -148,7 +148,7 @@ COMMANDS = {
                 "name": "f-strings",
                 "category": "Strings",
                 "what": "The modern way to embed variables inside strings. Prefix the string with f and put variables in {}.",
-                "code": 'name = "Ozzie"\nage = 15\n\nprint(f"Name: {name}, Age: {age}")\n\n# Expressions work too\nprint(f"In 10 years: {age + 10}")\n\n# Format numbers\npi = 3.14159\nprint(f"Pi is {pi:.2f}")  # Pi is 3.14\n\n# Used everywhere in workout tracker\nst.write(f"You have **{len(sessions)}** sessions")',
+                "code": 'name = "Ozzie"\nage = 15\n\nprint(f"Name: {name}, Age: {age}")\n\n# Expressions work too\nprint(f"In 10 years: {age + 10}")\n\n# Format numbers\npi = 3.14159\nprint(f"Pi is {pi:.2f}")  # Pi is 3.14\n\n# Used everywhere in student portal\nst.write(f"You have **{len(posts)}** posts")',
                 "gotcha": None,
                 "tip": ":.2f inside the braces rounds to 2 decimal places. :, adds thousand separators.",
             },
@@ -167,6 +167,14 @@ COMMANDS = {
                 "code": 'import json\nimport os\n\nFILE = "sessions.json"\n\n# Load from file (safe — handles missing file)\ndef load_sessions():\n    if not os.path.exists(FILE):\n        return {}  # first run, nothing saved yet\n    with open(FILE, "r") as f:\n        return json.load(f)\n\n# Save to file\ndef save_sessions(all_sessions):\n    with open(FILE, "w") as f:\n        json.dump(all_sessions, f, indent=2)\n\n# Add a new entry for a user and save\ndef save_for_user(username, entry):\n    data = load_sessions()\n    if username not in data:\n        data[username] = []\n    data[username].append(entry)\n    save_sessions(data)\n\n# Delete an entry by index and save\ndef delete_session(username, index):\n    data = load_sessions()\n    data[username].pop(index)\n    save_sessions(data)',
                 "gotcha": "json.dump() writes to a file. json.dumps() returns a string. json.load() reads a file. json.loads() parses a string. Easy to mix up.",
                 "tip": "indent=2 makes the saved JSON file human-readable. This is the exact pattern used in the workout tracker.",
+            },
+            {
+                "name": "os.makedirs()",
+                "category": "Files",
+                "what": "Creates a folder on disk. Used when you need to save uploaded files and the folder might not exist yet.",
+                "code": 'import os\n\n# Create a folder called "uploads"\nif not os.path.exists("uploads"):\n    os.makedirs("uploads")\n\n# Then save a file inside it\nfile_path = os.path.join("uploads", "photo.jpg")\nwith open(file_path, "wb") as f:\n    f.write(file_data)\n\n# os.path.join builds the path correctly\n# on both Mac and Windows\nos.path.join("uploads", "photo.jpg")  # "uploads/photo.jpg"',
+                "gotcha": "Always check os.path.exists() before os.makedirs() or you get an error if the folder already exists.",
+                "tip": "os.path.join() is better than just writing \"uploads/photo.jpg\" — it works on Windows too which uses backslashes.",
             },
             {
                 "name": "datetime — date.today() and timedelta",
@@ -195,7 +203,7 @@ COMMANDS = {
         ],
     },
     "Streamlit": {
-        "categories": ["All", "Display", "Input", "Layout", "State", "Data & files"],
+        "categories": ["All", "Display", "Input", "Layout", "State", "Data & files", "Media"],
         "commands": [
             {
                 "name": "st.set_page_config()",
@@ -233,7 +241,7 @@ COMMANDS = {
                 "name": "st.info() / st.success() / st.warning() / st.error()",
                 "category": "Display",
                 "what": "Coloured alert banners. Blue = info, green = success, orange = warning, red = error.",
-                "code": 'st.info("Session duration: **45 mins**")\nst.success("Session saved!")\nst.warning("Start time doesn\'t look right")\nst.error("Could not load file")',
+                "code": 'st.info("Session duration: **45 mins**")\nst.success("Post published!")\nst.warning("Please add a title before posting.")\nst.error("Incorrect username or password.")',
                 "gotcha": None,
                 "tip": None,
             },
@@ -241,7 +249,7 @@ COMMANDS = {
                 "name": "st.caption()",
                 "category": "Display",
                 "what": "Small grey helper text, like a footnote. Good for hints below buttons or inputs.",
-                "code": 'st.caption("Add at least one workout before saving.")',
+                "code": 'st.caption("Add at least one workout before saving.")\nst.caption(f"Posted by: {post[\'posted_by\']}")',
                 "gotcha": None,
                 "tip": None,
             },
@@ -270,6 +278,22 @@ COMMANDS = {
                 "tip": None,
             },
             {
+                "name": "st.text_input() — password",
+                "category": "Input",
+                "what": "Add type='password' to hide what the user types. Used for login forms and staff access gates.",
+                "code": '# Password field — hides input with dots\npassword = st.text_input(\n    "Enter password:",\n    type="password",\n    key="login_password"\n)\n\nif st.button("Submit"):\n    if password == "2005":\n        st.session_state.page = "home"\n        st.rerun()\n    else:\n        st.error("Incorrect password.")',
+                "gotcha": "type='password' only hides the display — the value is still a plain string. Don't use this for real security-sensitive apps.",
+                "tip": None,
+            },
+            {
+                "name": "st.text_area()",
+                "category": "Input",
+                "what": "A multiline text box. Good for longer text like descriptions, notes, or posts. Returns a string.",
+                "code": 'description = st.text_area(\n    "Description:",         # label\n    key="post_description"  # unique ID\n)\n\n# With a default value\nnotes = st.text_area(\n    "Notes:",\n    value="Enter your notes here...",\n    key="notes_input"\n)\n\nst.write(f"You typed {len(description)} characters")',
+                "gotcha": None,
+                "tip": "Use st.text_input() for short single-line answers. Use st.text_area() for anything longer than one line.",
+            },
+            {
                 "name": "st.number_input()",
                 "category": "Input",
                 "what": "A numeric stepper with + / − buttons. Returns an int or float depending on your step= value.",
@@ -286,6 +310,14 @@ COMMANDS = {
                 "tip": "The returned value is one of the items from your list, so you can compare it with == directly.",
             },
             {
+                "name": "st.selectbox() — dynamic options",
+                "category": "Input",
+                "what": "Build the options list with if statements before passing it to selectbox — so different users see different options.",
+                "code": '# Everyone sees these\ncategories = [\n    "General (entire school)",\n    "Revision (Y10+)",\n    "Work Experience and Uni (Y10+)"\n]\n\n# House leader also sees House\nif st.session_state.user == "house leader":\n    categories = ["House"] + categories\n\n# PE teacher also sees Sports\nif st.session_state.user == "games/pe teacher":\n    categories = ["Sports"] + categories\n\n# Now pass the built list to selectbox\ncategory = st.selectbox("Category:", categories, key="post_category")',
+                "gotcha": None,
+                "tip": "Build the list first, then pass it. The selectbox doesn't care how the list was made — it just shows whatever's in it.",
+            },
+            {
                 "name": "st.radio()",
                 "category": "Input",
                 "what": "Radio buttons — user picks exactly one option from a visible list. Good for 2–4 choices.",
@@ -294,12 +326,36 @@ COMMANDS = {
                 "tip": "For 5+ options, use selectbox instead — radio buttons get visually cluttered.",
             },
             {
+                "name": "st.multiselect()",
+                "category": "Input",
+                "what": "A dropdown where the user can pick multiple items. Returns a list of selected items.",
+                "code": 'year_groups = st.multiselect(\n    "Assign to year groups:",\n    ["Y7", "Y8", "Y9", "Y10", "Y11", "Y12", "Y13"],\n    key="post_years"\n)\n\n# Returns a list — check it has something\nif not year_groups:\n    st.warning("Pick at least one year group.")\n\n# Loop through selected items\nfor year in year_groups:\n    st.write(f"Sending to {year}")',
+                "gotcha": "Returns a list, not a single value. Even if one item is selected it returns [\"Y7\"], not \"Y7\".",
+                "tip": "Use 'if not year_groups:' to check if nothing has been selected.",
+            },
+            {
                 "name": "st.date_input()",
                 "category": "Input",
                 "what": "A date picker calendar. Returns a datetime.date object — not a string.",
                 "code": 'from datetime import datetime\n\nchosen_date = st.date_input(\n    "Session date:",\n    value=datetime.now().date()  # pre-select today\n)\n\n# Convert to string for saving to JSON\ndate_str = chosen_date.strftime("%Y-%m-%d")',
                 "gotcha": "Returns a date object, NOT a string. Use .strftime() to convert it to text.",
                 "tip": None,
+            },
+            {
+                "name": "st.file_uploader()",
+                "category": "Input",
+                "what": "Lets the user upload a file from their device. Returns the uploaded file object, or None if nothing uploaded.",
+                "code": '# Single file\nfile = st.file_uploader(\n    "Upload an image:",\n    type=["jpg", "jpeg", "png"],  # allowed types\n    key="upload"\n)\n\nif file is not None:\n    st.image(file)  # preview it\n\n# Multiple files\nfiles = st.file_uploader(\n    "Upload photos or videos:",\n    type=["jpg", "jpeg", "png", "mp4"],\n    accept_multiple_files=True,\n    key="multi_upload"\n)\n\nfor f in files:\n    st.write(f.name)  # show each filename',
+                "gotcha": "Without accept_multiple_files=True you can only upload one file at a time. The returned object is in memory — you need to save it to disk yourself.",
+                "tip": "Use file.name to get the filename and file.getbuffer() to get the raw bytes for saving.",
+            },
+            {
+                "name": "file.getbuffer() — saving uploads to disk",
+                "category": "Input",
+                "what": "Once a file is uploaded, use getbuffer() to get the raw bytes so you can write it to disk.",
+                "code": 'import os\n\nfiles = st.file_uploader(\n    "Upload photos:",\n    type=["jpg", "jpeg", "png"],\n    accept_multiple_files=True,\n    key="upload"\n)\n\nmedia_paths = []\nif files:\n    # Create uploads folder if needed\n    if not os.path.exists("uploads"):\n        os.makedirs("uploads")\n\n    for file in files:\n        # Build the save path\n        save_path = os.path.join("uploads", file.name)\n\n        # Write the file to disk\n        with open(save_path, "wb") as f:  # "wb" = write bytes\n            f.write(file.getbuffer())\n\n        media_paths.append(save_path)\n\n# media_paths now has the path to every saved file',
+                "gotcha": '"wb" means write bytes — you must use this mode for images and videos, not "w" which is for text.',
+                "tip": "Save the file paths to your JSON so you can load the images again later when displaying posts.",
             },
             {
                 "name": "st.columns()",
@@ -313,9 +369,9 @@ COMMANDS = {
                 "name": "st.container()",
                 "category": "Layout",
                 "what": "A grouping box. With border=True it draws a visible rounded rectangle around its contents.",
-                "code": '# Invisible container — just groups things\nwith st.container():\n    st.write("Grouped content")\n\n# Visible bordered card\nwith st.container(border=True):\n    st.markdown("**Session 1** — 07:30 to 08:15")\n    st.write("• Bench press — 80kg — 3 sets")',
+                "code": '# Invisible container — just groups things\nwith st.container():\n    st.write("Grouped content")\n\n# Visible bordered card\nwith st.container(border=True):\n    st.caption(f"Posted by: {post[\'posted_by\']}")\n    st.subheader(post["title"])\n    st.write(post["description"][:100] + "...")',
                 "gotcha": None,
-                "tip": "border=True is great for making session cards or any record-style display.",
+                "tip": "border=True is great for post cards, session cards, or any record-style display.",
             },
             {
                 "name": "st.session_state",
@@ -339,7 +395,23 @@ COMMANDS = {
                 "what": "The standard pattern for building an app with multiple pages. Each page is a function. A router at the bottom decides which to call.",
                 "code": '# 1. Define each page as a function\ndef show_login_page():\n    st.title("My App")\n    if st.button("Log in as Dad"):\n        st.session_state.user = "Dad"\n        st.session_state.page = "home"\n        st.rerun()\n\ndef show_home_page():\n    user = st.session_state.user\n    st.title(f"Welcome, {user}")\n    if st.button("Log out"):\n        st.session_state.user = None\n        st.session_state.page = "login"\n        st.rerun()\n\n# 2. Set defaults at the top of the file\nif "page" not in st.session_state:\n    st.session_state.page = "login"\nif "user" not in st.session_state:\n    st.session_state.user = None\n\n# 3. Router at the BOTTOM — decides which page to show\nif st.session_state.page == "login":\n    show_login_page()\nelif st.session_state.page == "home":\n    show_home_page()',
                 "gotcha": "The router must be at the bottom of the file, after all the def blocks. Python reads top to bottom — calling show_login_page() before defining it gives a NameError.",
-                "tip": "This is the exact structure of the Family Workout Tracker — login, home, log_session, and history are all separate def functions called from the router at the bottom.",
+                "tip": "This is the exact structure of the Family Workout Tracker and the Student Portal.",
+            },
+            {
+                "name": "st.image()",
+                "category": "Media",
+                "what": "Displays an image. Pass a file path, a URL, or an uploaded file object.",
+                "code": '# From a file path (saved on disk)\nst.image("uploads/photo.jpg", use_container_width=True)\n\n# From an uploaded file directly\nfile = st.file_uploader("Upload:", type=["jpg", "png"])\nif file:\n    st.image(file, use_container_width=True)\n\n# From a Pillow Image object\nfrom PIL import Image\nimg = Image.open("photo.jpg")\nst.image(img, use_container_width=True)',
+                "gotcha": "use_container_width=True makes the image fill the full width of the column — without it the image shows at its original size which might be huge.",
+                "tip": "You can pass a Pillow Image object directly to st.image() — useful when you've rotated or edited the image with Pillow first.",
+            },
+            {
+                "name": "Pillow — fix image rotation",
+                "category": "Media",
+                "what": "Phone photos often display sideways because their rotation is stored as hidden EXIF data. Pillow can read and fix this.",
+                "code": 'from PIL import Image, ExifTags\n\ndef fix_image_rotation(image_path):\n    img = Image.open(image_path)\n    try:\n        for tag, value in img._getexif().items():\n            if ExifTags.TAGS.get(tag) == "Orientation":\n                if value == 3:\n                    img = img.rotate(180, expand=True)\n                elif value == 6:\n                    img = img.rotate(270, expand=True)\n                elif value == 8:\n                    img = img.rotate(90, expand=True)\n                break\n    except:\n        pass  # no EXIF data — leave as is\n    return img\n\n# Use it when displaying\nst.image(fix_image_rotation("uploads/photo.jpg"),\n         use_container_width=True)',
+                "gotcha": "You need to install Pillow first: pip3 install Pillow. Then import with: from PIL import Image, ExifTags",
+                "tip": "The try/except is important — not all images have EXIF data (e.g. screenshots) and it would crash without it.",
             },
             {
                 "name": "json + open() for storage",
@@ -379,6 +451,14 @@ COMMANDS = {
                 "tip": None,
             },
             {
+                "name": "Password gate — protect a page",
+                "category": "Pages",
+                "what": "Show a password field when a button is clicked, then only proceed if the correct password is entered. Used in the student portal to stop students accessing the teacher login.",
+                "code": '# Set default\nif "show_staff_login" not in st.session_state:\n    st.session_state.show_staff_login = False\n\ndef show_welcome_page():\n    st.title("Welcome")\n    st.write("---")\n\n    if st.button("Student", use_container_width=True):\n        st.session_state.page = "student_login"\n        st.rerun()\n\n    if st.button("Teacher", use_container_width=True):\n        st.session_state.show_staff_login = True\n        st.rerun()\n\n    # Only shows after Teacher button is clicked\n    if st.session_state.show_staff_login:\n        password = st.text_input(\n            "Enter staff password:",\n            type="password",\n            key="staff_password"\n        )\n        if st.button("Submit", use_container_width=True):\n            if password == "2005":\n                st.session_state.show_staff_login = False\n                st.session_state.page = "login"\n                st.rerun()\n            else:\n                st.error("Incorrect password.")',
+                "gotcha": "You can't put a st.text_input inside an if st.button block — it disappears on the next rerun. Use session state to track whether the password field should be visible.",
+                "tip": "This pattern works for any gated content — not just passwords. Set a session_state flag when a button is clicked, then show extra content based on that flag.",
+            },
+            {
                 "name": "Save and load JSON data",
                 "category": "Data",
                 "what": "The complete pattern for persisting data between sessions using a JSON file — the backbone of the workout tracker.",
@@ -387,12 +467,20 @@ COMMANDS = {
                 "tip": "Always call load() fresh each time you need the data — don't store it in a variable at the top of the file or it'll go stale between reruns.",
             },
             {
+                "name": "Category dict — display label vs stored value",
+                "category": "Data",
+                "what": "When you want buttons to show a friendly name but filter/save using a different value behind the scenes. Used in the student portal so students see 'General' but it matches 'General (entire school)' in the JSON.",
+                "code": '# Dict: display label → actual stored value\ncategories = {\n    "General": "General (entire school)",\n    "House": "House",\n    "Sports": "Sports",\n}\n\n# Build buttons from the dict\ncols = st.columns(len(categories))\nfor i, (label, value) in enumerate(categories.items()):\n    with cols[i]:\n        if st.button(label, use_container_width=True, key=f"cat_{label}"):\n            st.session_state.category = value  # store the real value\n            st.rerun()\n\n# Filter posts using the real stored value\nposts = [\n    p for p in all_posts\n    if p["category"] == st.session_state.category\n]',
+                "gotcha": "The stored value must exactly match what's in your JSON — same capitalisation, same spelling, same brackets.",
+                "tip": "Use .items() to loop over both the label and value at the same time.",
+            },
+            {
                 "name": "Delete with confirm step",
                 "category": "UI",
                 "what": "A two-step delete: first click shows a confirmation, second click actually deletes. Prevents accidental deletions.",
                 "code": '# Set default\nif "confirm_delete" not in st.session_state:\n    st.session_state.confirm_delete = None\n\n# In your list loop\nfor i, item in enumerate(items):\n    with st.container(border=True):\n        st.write(item["name"])\n\n        if st.session_state.confirm_delete == i:\n            # Confirmation state\n            st.warning("Are you sure?")\n            col1, col2 = st.columns(2)\n            with col1:\n                if st.button("Yes, delete", key=f"confirm_{i}"):\n                    items.pop(i)\n                    st.session_state.confirm_delete = None\n                    st.rerun()\n            with col2:\n                if st.button("Cancel", key=f"cancel_{i}"):\n                    st.session_state.confirm_delete = None\n                    st.rerun()\n        else:\n            if st.button("Delete", key=f"delete_{i}"):\n                st.session_state.confirm_delete = i\n                st.rerun()',
                 "gotcha": "Store the index of the item being confirmed, not just True/False — otherwise you can't tell which item to delete.",
-                "tip": "This is exactly how the workout tracker's history page works. confirm_delete_index in session_state holds whichever session is awaiting confirmation.",
+                "tip": "This is exactly how the workout tracker's history page works.",
             },
             {
                 "name": "Day-by-day calendar navigation",
@@ -485,7 +573,7 @@ search = st.text_input(
     "🔍 Search commands...",
     value=st.session_state.search_query,
     key="search_input",
-    placeholder="e.g. button, loop, file, date"
+    placeholder="e.g. button, loop, file, date, image"
 )
 st.session_state.search_query = search
 
@@ -519,3 +607,4 @@ if not commands:
 else:
     for cmd in commands:
         render_command_card(cmd)
+
